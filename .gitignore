@@ -1,0 +1,23 @@
+# Environment
+.env
+
+# Binary
+*.exe
+bin/
+
+# Logs
+*.log
+
+# Temp
+tmp/
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
+
+# Go
+vendor/
+
+# Test cache
+*.test
