@@ -24,32 +24,129 @@ Hệ thống quản lý công việc nội bộ xây dựng bằng Go, theo ki�
 - Unit test, Integration test, CI/CD
 
 ## Cấu trúc thư mục
+```text
 Task/
+│
 ├── cmd/
-│   ├── api/main.go        # API server
-│   └── worker/main.go     # Notification worker
+│   ├── api/
+│   │   └── main.go
+│   │
+│   └── worker/
+│       └── main.go
+│
 ├── internal/
-│   ├── cache/             # Redis connection
-│   ├── config/            # App configuration
-│   ├── db/                # Database connection
-│   ├── dto/               # Request/Response objects
-│   ├── entities/          # Domain models
-│   ├── handlers/          # HTTP handlers
-│   ├── jobs/              # Background jobs
-│   ├── mappers/           # Entity <-> DTO mappers
-│   ├── middlewares/       # Auth, Role, RateLimit, Logger
-│   ├── repositories/      # Database layer
-│   ├── responses/         # Response format
-│   ├── routes/            # API routes
-│   ├── services/          # Business logic
-│   ├── tests/             # Integration tests
-│   ├── utils/             # JWT, Password utils
-│   └── websocket/         # WebSocket Hub
-├── migrations/            # Database migrations
-├── .github/workflows/     # CI/CD pipeline
+│   │
+│   ├── cache/
+│   │   └── redis.go
+│   │
+│   ├── config/
+│   │   └── config.go
+│   │
+│   ├── db/
+│   │   └── postgres.go
+│   │
+│   ├── dto/
+│   │   ├── auth_dto.go
+│   │   ├── user_dto.go
+│   │   ├── project_dto.go
+│   │   └── task_dto.go
+│   │
+│   ├── entities/
+│   │   ├── user.go
+│   │   ├── project.go
+│   │   ├── task.go
+│   │   └── notification.go
+│   │
+│   ├── handlers/
+│   │   ├── auth_handler.go
+│   │   ├── user_handler.go
+│   │   ├── project_handler.go
+│   │   ├── task_handler.go
+│   │   └── websocket_handler.go
+│   │
+│   ├── jobs/
+│   │   ├── notification_job.go
+│   │   └── task_job.go
+│   │
+│   ├── mappers/
+│   │   ├── user_mapper.go
+│   │   ├── project_mapper.go
+│   │   └── task_mapper.go
+│   │
+│   ├── middlewares/
+│   │   ├── jwt_middleware.go
+│   │   ├── role_middleware.go
+│   │   ├── ratelimit_middleware.go
+│   │   ├── logger_middleware.go
+│   │   └── requestid_middleware.go
+│   │
+│   ├── repositories/
+│   │   ├── user_repository.go
+│   │   ├── project_repository.go
+│   │   ├── task_repository.go
+│   │   └── notification_repository.go
+│   │
+│   ├── responses/
+│   │   └── response.go
+│   │
+│   ├── routes/
+│   │   ├── auth_routes.go
+│   │   ├── user_routes.go
+│   │   ├── project_routes.go
+│   │   ├── task_routes.go
+│   │   └── websocket_routes.go
+│   │
+│   ├── services/
+│   │   ├── auth_service.go
+│   │   ├── user_service.go
+│   │   ├── project_service.go
+│   │   ├── task_service.go
+│   │   └── notification_service.go
+│   │
+│   ├── tests/
+│   │   ├── auth_service_test.go
+│   │   ├── user_service_test.go
+│   │   ├── project_service_test.go
+│   │   └── task_service_test.go
+│   │
+│   ├── utils/
+│   │   ├── jwt.go
+│   │   ├── password.go
+│   │   ├── validator.go
+│   │   └── time.go
+│   │
+│   └── websocket/
+│       ├── hub.go
+│       ├── client.go
+│       └── message.go
+│
+├── migrations/
+│   ├── 000001_create_users.up.sql
+│   ├── 000001_create_users.down.sql
+│   ├── 000002_create_projects.up.sql
+│   ├── 000002_create_projects.down.sql
+│   ├── 000003_create_tasks.up.sql
+│   ├── 000003_create_tasks.down.sql
+│   ├── 000004_create_notifications.up.sql
+│   └── 000004_create_notifications.down.sql
+│
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+│
+├── docs/
+│   └── postman_collection.json
+│
 ├── Dockerfile
 ├── docker-compose.yml
-└── .env.example
+├── go.mod
+├── go.sum
+├── .env
+├── .env.example
+├── .gitignore
+└── README.md
+```
+
 ## Yêu cầu
 
 - Docker & Docker Compose
