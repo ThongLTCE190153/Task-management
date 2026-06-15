@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"trithong.com/task-golang/internal/cache"
+	"trithong.com/task-golang/internal/dto"
 	"trithong.com/task-golang/internal/entities"
 	"trithong.com/task-golang/internal/repositories"
-	"trithong.com/task-golang/internal/dto"
 	appwebsocket "trithong.com/task-golang/internal/websocket"
 
 	"github.com/redis/go-redis/v9"
@@ -17,7 +17,9 @@ import (
 type ProjectService interface {
 	Create(project entities.Project) (entities.Project, error)
 	GetAllByOwnerID(ownerID int) ([]entities.Project, error)
+	GetAllByRole(userID int, role string) ([]entities.Project, error)
 	GetAllWithPagination(ownerID int, params dto.ProjectQueryParams) ([]entities.Project, int, error)
+	GetAllWithPaginationByRole(userID int, role string, params dto.ProjectQueryParams) ([]entities.Project, int, error)
 	GetByIDAndOwnerID(id int, ownerID int) (entities.Project, error)
 	Update(id int, ownerID int, project entities.Project) (entities.Project, error)
 	Delete(id int, ownerID int) error
@@ -62,7 +64,6 @@ func (s *projectService) Create(project entities.Project) (entities.Project, err
 	return newProject, nil
 }
 
-
 func (s *projectService) GetAllByOwnerID(ownerID int) ([]entities.Project, error) {
 	cacheKey := fmt.Sprintf("projects:user:%d", ownerID)
 
@@ -91,6 +92,66 @@ func (s *projectService) GetAllByOwnerID(ownerID int) ([]entities.Project, error
 	}
 
 	return projects, nil
+}
+
+func (s *projectService) GetAllByRole(userID int, role string) ([]entities.Project, error) {
+	cacheKey := fmt.Sprintf("projects:user:%d:role:%s", userID, role)
+
+	cachedData, err := s.redisClient.Get(cache.Ctx, cacheKey).Result()
+
+	if err == nil {
+		var projects []entities.Project
+		err = json.Unmarshal([]byte(cachedData), &projects)
+		if err == nil {
+			return projects, nil
+		}
+	}
+
+	projects, err := s.projectRepo.GetAllByRole(userID, role)
+
+	if err != nil {
+		return nil, err
+	}
+
+	cacheBytes, _ := json.Marshal(projects)
+	s.redisClient.Set(cache.Ctx, cacheKey, cacheBytes, 10*time.Minute)
+
+	return projects, nil
+}
+
+func (s *projectService) GetAllWithPaginationByRole(userID int, role string, params dto.ProjectQueryParams) ([]entities.Project, int, error) {
+	cacheKey := fmt.Sprintf("projects:user:%d:role:%s:page:%d:limit:%d", userID, role, params.Page, params.Limit)
+
+	cachedData, err := s.redisClient.Get(cache.Ctx, cacheKey).Result()
+
+	if err == nil {
+		var result struct {
+			Projects []entities.Project `json:"projects"`
+			Total    int                `json:"total"`
+		}
+		err = json.Unmarshal([]byte(cachedData), &result)
+		if err == nil {
+			return result.Projects, result.Total, nil
+		}
+	}
+
+	projects, total, err := s.projectRepo.GetAllWithPaginationByRole(userID, role, params)
+
+	if err != nil {
+		return nil, 0, err
+	}
+
+	result := struct {
+		Projects []entities.Project `json:"projects"`
+		Total    int                `json:"total"`
+	}{
+		Projects: projects,
+		Total:    total,
+	}
+	cacheBytes, _ := json.Marshal(result)
+	s.redisClient.Set(cache.Ctx, cacheKey, cacheBytes, 10*time.Minute)
+
+	return projects, total, nil
 }
 
 func (s *projectService) GetByIDAndOwnerID(id int, ownerID int) (entities.Project, error) {

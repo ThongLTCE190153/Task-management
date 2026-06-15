@@ -53,6 +53,7 @@ func (h *ProjectHandler) Create(c *gin.Context) {
 
 func (h *ProjectHandler) GetAll(c *gin.Context) {
 	userID := c.GetInt("user_id")
+	role := c.GetString("role")
 
 	var params dto.ProjectQueryParams
 	if err := c.ShouldBindQuery(&params); err != nil {
@@ -62,7 +63,7 @@ func (h *ProjectHandler) GetAll(c *gin.Context) {
 
 	// Nếu không có pagination thì trả về tất cả như cũ
 	if params.Page == 0 && params.Limit == 0 {
-		projects, err := h.projectService.GetAllByOwnerID(userID)
+		projects, err := h.projectService.GetAllByRole(userID, role)
 		if err != nil {
 			responses.Error(c, http.StatusInternalServerError, err.Error())
 			return
@@ -77,7 +78,7 @@ func (h *ProjectHandler) GetAll(c *gin.Context) {
 		return
 	}
 
-	projects, total, err := h.projectService.GetAllWithPagination(userID, params)
+	projects, total, err := h.projectService.GetAllWithPaginationByRole(userID, role, params)
 	if err != nil {
 		responses.Error(c, http.StatusInternalServerError, err.Error())
 		return
