@@ -49,6 +49,26 @@ func (m *MockProjectRepository) GetAllWithPagination(ownerID int, params dto.Pro
 	return args.Get(0).([]entities.Project), args.Int(1), args.Error(2)
 }
 
+func (m *MockProjectRepository) GetAll() ([]entities.Project, error) {
+	args := m.Called()
+	return args.Get(0).([]entities.Project), args.Error(1)
+}
+
+func (m *MockProjectRepository) GetAllByAssignedUserID(userID int) ([]entities.Project, error) {
+	args := m.Called(userID)
+	return args.Get(0).([]entities.Project), args.Error(1)
+}
+
+func (m *MockProjectRepository) GetAllWithPaginationByRole(userID int, role string, params dto.ProjectQueryParams) ([]entities.Project, int, error) {
+	args := m.Called(userID, role, params)
+	return args.Get(0).([]entities.Project), args.Int(1), args.Error(2)
+}
+
+func (m *MockProjectRepository) GetAllByRole(userID int, role string) ([]entities.Project, error) {
+	args := m.Called(userID, role)
+	return args.Get(0).([]entities.Project), args.Error(1)
+}
+
 // ===== HELPER =====
 
 func newTestRedis() *redis.Client {
@@ -192,6 +212,61 @@ func TestDeleteProject_NotFound(t *testing.T) {
 	err := service.Delete(1, 99)
 
 	assert.Error(t, err)
+
+	mockRepo.AssertExpectations(t)
+}
+
+func TestGetAllByRole_Admin(t *testing.T) {
+	mockRepo := new(MockProjectRepository)
+
+	mockRepo.On("GetAll").
+		Return([]entities.Project{
+			{ID: 1, Name: "Project A", OwnerID: 1},
+			{ID: 2, Name: "Project B", OwnerID: 2},
+		}, nil)
+
+	service := NewProjectService(mockRepo, newTestRedis(), newTestHub())
+
+	results, err := service.GetAllByRole(1, "admin")
+
+	assert.NoError(t, err)
+	assert.Len(t, results, 2)
+
+	mockRepo.AssertExpectations(t)
+}
+
+func TestGetAllByRole_Manager(t *testing.T) {
+	mockRepo := new(MockProjectRepository)
+
+	mockRepo.On("GetAllByOwnerID", 1).
+		Return([]entities.Project{
+			{ID: 1, Name: "Project A", OwnerID: 1},
+		}, nil)
+
+	service := NewProjectService(mockRepo, newTestRedis(), newTestHub())
+
+	results, err := service.GetAllByRole(1, "manager")
+
+	assert.NoError(t, err)
+	assert.Len(t, results, 1)
+
+	mockRepo.AssertExpectations(t)
+}
+
+func TestGetAllByRole_User(t *testing.T) {
+	mockRepo := new(MockProjectRepository)
+
+	mockRepo.On("GetAllByAssignedUserID", 3).
+		Return([]entities.Project{
+			{ID: 1, Name: "Project A", OwnerID: 1},
+		}, nil)
+
+	service := NewProjectService(mockRepo, newTestRedis(), newTestHub())
+
+	results, err := service.GetAllByRole(3, "user")
+
+	assert.NoError(t, err)
+	assert.Len(t, results, 1)
 
 	mockRepo.AssertExpectations(t)
 }

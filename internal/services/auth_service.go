@@ -54,6 +54,7 @@ func (s *authService) Register(request dto.RegisterRequest) (entities.User, erro
 		Email:        request.Email,
 		PasswordHash: hashedPassword,
 		FullName:     request.FullName,
+		Role:         "user",
 	}
 
 	return s.userRepo.Create(user)
